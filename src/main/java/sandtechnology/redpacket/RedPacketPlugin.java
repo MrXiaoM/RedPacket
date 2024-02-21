@@ -103,6 +103,8 @@ public class RedPacketPlugin extends JavaPlugin {
         setIfAbsent("RedPacket.Expired", false);
         setIfAbsent("RedPacket.ExpiredTime", 86400000);
         setIfAbsent("RedPacket.SessionExpiredTime", 500000);
+        setIfAbsent("gui.size", 54);
+        setIfAbsent("gui.title", "发红包");
         saveConfig();
     }
 

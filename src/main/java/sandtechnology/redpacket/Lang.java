@@ -6,7 +6,9 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import sandtechnology.redpacket.util.ColorHelper;
+import sandtechnology.redpacket.util.PlaceholderHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +41,7 @@ public enum Lang {
     COMMANDS__SESSION__CANCEL("&e该会话已取消"),
     COMMANDS__RELOAD__SUCCESS("&a重载成功"),
     COMMANDS__RELOAD__FAILED("&c出现错误，请查看控制台"),
+    GUI__TITLE("发红包"),
     REDPACKET__NORMAL__CLICK("&a&n点击这里领取"),
     REDPACKET__NORMAL__CLICK_HOVER("&e领取普通红包"),
     REDPACKET__PASSWORD__CLICK("&a&n点击这里领取"),
@@ -54,12 +57,20 @@ public enum Lang {
     final String key = name().toLowerCase().replace("__", ".").replace("_", "-");
     final String defaultValue;
     Lang(String... defaultValue) {
-        this.defaultValue = String.join("\n", defaultValue);
+        this.defaultValue = String.join("\n&r", defaultValue);
     }
 
     public boolean t(CommandSender receiver, Object... replacements) {
         if (receiver == null) return false;
         receiver.sendMessage(text(replacements));
+        return true;
+    }
+    public boolean tP(Player player, Object... replacements) {
+        return tP(player, player, replacements);
+    }
+    public boolean tP(CommandSender receiver, Player player, Object... replacements) {
+        if (receiver == null || player == null) return false;
+        receiver.sendMessage(textP(player, replacements));
         return true;
     }
 
@@ -80,6 +91,14 @@ public enum Lang {
     }
 
     /**
+     * 获取语言值，并替换 PAPI 变量
+     * @see sandtechnology.redpacket.Lang#text(Object...)
+     */
+    public String textP(Player player, Object... replacements) {
+        return PlaceholderHelper.setPlaceholders(player, text(replacements));
+    }
+
+    /**
      * 获取语言值
      * @param replacements 变量替换器，偶数或零索引(0,2,4)为键，单数索引(1,3,5)为值。
      */
@@ -93,6 +112,14 @@ public enum Lang {
             msg = msg.replace(key, value);
         }
         return ColorHelper.parseColor(msg.split("\n"));
+    }
+
+    /**
+     * 获取语言值，并替换 PAPI 变量
+     * @see sandtechnology.redpacket.Lang#list(Object...)
+     */
+    public List<String> listP(Player player, Object... replacements) {
+        return PlaceholderHelper.setPlaceholders(player, list(replacements));
     }
 
     @SuppressWarnings({"deprecation"})

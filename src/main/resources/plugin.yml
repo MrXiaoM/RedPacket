@@ -4,7 +4,7 @@ main: sandtechnology.redpacket.RedPacketPlugin
 prefix: RedPacket
 authors: [ sandtechnology, MrXiaoM ]
 description: RedPacket
-softdepend: [ Vault ]
+softdepend: [ Vault, PlaceholderAPI, ItemsAdder ]
 api-version: 1.13
 commands:
   RedPacket:

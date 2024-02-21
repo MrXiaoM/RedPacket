@@ -12,6 +12,7 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import sandtechnology.redpacket.Lang;
+import sandtechnology.redpacket.gui.GuiNewRedPacket;
 import sandtechnology.redpacket.redpacket.RedPacket;
 import sandtechnology.redpacket.session.CreateSession;
 import sandtechnology.redpacket.util.IdiomManager;
@@ -20,6 +21,7 @@ import sandtechnology.redpacket.util.RedPacketManager;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sandtechnology.redpacket.RedPacketPlugin.getGui;
 import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
 import static sandtechnology.redpacket.session.SessionManager.getSessionManager;
 import static sandtechnology.redpacket.util.CommonHelper.checkAndDoSomething;
@@ -89,6 +91,20 @@ public class CommandHandler implements TabExecutor {
                         }
                         sendSimpleMsg(player, getSessionManager().getSession(player).getBuilder().getInfo());
                     }
+                    break;
+                case "password": {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 1; i < args.length; i++) {
+                        sb.append(" ").append(args[i]);
+                    }
+                    String msg = sb.toString().trim();
+                    if (!msg.isEmpty()) {
+                        player.chat(msg);
+                    }
+                    break;
+                }
+                case "gui":
+                    getGui().openGui(new GuiNewRedPacket(player));
                     break;
                 case "query":
                     if (checkArgs(args, 2, player)) {

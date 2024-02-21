@@ -12,13 +12,17 @@ repositories {
     mavenCentral()
     maven("https://maven.fastmirror.net/repositories/minecraft")
     maven("https://repo.codemc.io/repository/maven-public/")
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    maven("https://jitpack.io/")
     maven("https://oss.sonatype.org/content/groups/public/")
 }
 
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("net.milkbowl.vault:VaultAPI:1.7")
+    compileOnly("me.clip:placeholderapi:2.11.5")
+    compileOnly("com.github.LoneDev6:API-ItemsAdder:3.6.1")
     implementation("org.jetbrains:annotations:19.0.0")
 }
 

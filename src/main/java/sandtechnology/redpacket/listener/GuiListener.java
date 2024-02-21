@@ -12,13 +12,13 @@ import org.jetbrains.annotations.Nullable;
 import sandtechnology.redpacket.RedPacketPlugin;
 import sandtechnology.redpacket.gui.IGui;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GuiListener implements Listener {
 	final RedPacketPlugin plugin;
-	final Map<UUID, IGui> playersGui = new HashMap<>();
+	final Map<UUID, IGui> playersGui = new ConcurrentHashMap<>();
 
 	public GuiListener(RedPacketPlugin plugin) {
 		this.plugin = plugin;
