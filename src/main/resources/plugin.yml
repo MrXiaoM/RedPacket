@@ -5,6 +5,7 @@ prefix: RedPacket
 authors: [ sandtechnology, MrXiaoM ]
 description: RedPacket
 softdepend: [ Vault ]
+api-version: 1.13
 commands:
   RedPacket:
     permission: redpacket
