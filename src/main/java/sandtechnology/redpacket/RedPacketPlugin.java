@@ -3,6 +3,7 @@ package sandtechnology.redpacket;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import sandtechnology.redpacket.command.CommandHandler;
 import sandtechnology.redpacket.database.AbstractDatabaseManager;
@@ -13,6 +14,10 @@ import sandtechnology.redpacket.listener.GuiListener;
 import sandtechnology.redpacket.listener.MessageSender;
 import sandtechnology.redpacket.util.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.Level;
 
 public class RedPacketPlugin extends JavaPlugin {
@@ -54,14 +59,23 @@ public class RedPacketPlugin extends JavaPlugin {
         getInstance().getLogger().log(level, String.format(msg, format));
     }
 
+    public static void warn(Throwable t) {
+        StringWriter sw = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            t.printStackTrace(pw);
+        }
+        log(Level.WARNING, sw.toString());
+    }
+
     public boolean reload() {
         try {
             getInstance().reloadConfig();
             updateConfig();
             IdiomManager.reload();
+            loadMessages();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            warn(e);
             return false;
         }
     }
@@ -91,6 +105,15 @@ public class RedPacketPlugin extends JavaPlugin {
         setIfAbsent("RedPacket.SessionExpiredTime", 500000);
         saveConfig();
     }
+
+    public void loadMessages() throws IOException {
+        File file = new File(getDataFolder(), "messages.yml");
+        if (!file.exists()) {
+            Lang.saveMessages(file);
+        }
+        Lang.messages = YamlConfiguration.loadConfiguration(file);
+    }
+
     @Override
     public void onEnable() {
         if (startup) {
@@ -105,6 +128,7 @@ public class RedPacketPlugin extends JavaPlugin {
             EcoAndPermissionHelper.setup();
             IdiomManager.setup();
             getLogger().info("更新配置文件...");
+            loadMessages();
             updateConfig();
             if (config().getString("Database.Type", "sqlite").equalsIgnoreCase("sqlite")) {
                 databaseManager = new SqliteManager(config().getString("Database.TableName"));
@@ -124,8 +148,8 @@ public class RedPacketPlugin extends JavaPlugin {
                 getLogger().warning("命令注册失败: 未找到");
             }
             getLogger().info("注册完成！等待其他插件加载完成...");
-            //为避免需要的经济插件被放在该插件后面加载造成出错
-            //将调用Vault API的方法延迟到服务器完全启动后
+            // 为避免需要的经济插件被放在该插件后面加载造成出错
+            // 将调用Vault API的方法延迟到服务器完全启动后
             Bukkit.getScheduler().runTask(this, () -> {
                 getLogger().info("正在载入红包信息，请稍等...");
                 RedPacketManager.getRedPacketManager().setup();
@@ -133,9 +157,9 @@ public class RedPacketPlugin extends JavaPlugin {
                 getLogger().info("初始化插件完成！");
                 startup = true;
             });
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             getServer().getPluginManager().disablePlugin(this);
-            throw e;
+            throw new RuntimeException("插件启用时发生了一个异常", e);
         }
     }
 
@@ -148,6 +172,5 @@ public class RedPacketPlugin extends JavaPlugin {
             MessageHelper.setStatus(false);
             getLogger().info("完成！继续服务器关闭程序...");
         }
-        // Plugin shutdown logic
     }
 }
