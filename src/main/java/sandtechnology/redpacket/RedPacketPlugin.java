@@ -1,6 +1,7 @@
 package sandtechnology.redpacket;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import sandtechnology.redpacket.command.CommandHandler;
@@ -8,6 +9,7 @@ import sandtechnology.redpacket.database.AbstractDatabaseManager;
 import sandtechnology.redpacket.database.MysqlManager;
 import sandtechnology.redpacket.database.SqliteManager;
 import sandtechnology.redpacket.listener.ChatListener;
+import sandtechnology.redpacket.listener.GuiListener;
 import sandtechnology.redpacket.listener.MessageSender;
 import sandtechnology.redpacket.util.*;
 
@@ -17,11 +19,20 @@ public class RedPacketPlugin extends JavaPlugin {
 
     private static RedPacketPlugin instance;
     private static AbstractDatabaseManager databaseManager;
+    private static GuiListener gui;
     private boolean startup;
 
     public static RedPacketPlugin getInstance() {
         if (instance != null) {
             return instance;
+        } else {
+            throw new IllegalStateException("插件未正常开启！请查看报错信息");
+        }
+    }
+
+    public static GuiListener getGui() {
+        if (gui != null) {
+            return gui;
         } else {
             throw new IllegalStateException("插件未正常开启！请查看报错信息");
         }
@@ -95,7 +106,7 @@ public class RedPacketPlugin extends JavaPlugin {
             IdiomManager.setup();
             getLogger().info("更新配置文件...");
             updateConfig();
-            if (config().getString("Database.Type").equalsIgnoreCase("sqlite")) {
+            if (config().getString("Database.Type", "sqlite").equalsIgnoreCase("sqlite")) {
                 databaseManager = new SqliteManager(config().getString("Database.TableName"));
             } else {
                 databaseManager = new MysqlManager(config().getString("Database.TableName"));
@@ -103,9 +114,15 @@ public class RedPacketPlugin extends JavaPlugin {
             getLogger().info("注册监听器...");
             getServer().getPluginManager().registerEvents(new ChatListener(), this);
             getServer().getPluginManager().registerEvents(new MessageSender(), this);
+            gui = new GuiListener(this);
             getLogger().info("注册命令...");
-            getCommand("RedPacket").setExecutor(CommandHandler.getCommandHandler());
-            getCommand("RedPacket").setTabCompleter(CommandHandler.getCommandHandler());
+            PluginCommand command = getCommand("RedPacket");
+            if (command != null) {
+                command.setExecutor(CommandHandler.getCommandHandler());
+                command.setTabCompleter(CommandHandler.getCommandHandler());
+            } else {
+                getLogger().warning("命令注册失败: 未找到");
+            }
             getLogger().info("注册完成！等待其他插件加载完成...");
             //为避免需要的经济插件被放在该插件后面加载造成出错
             //将调用Vault API的方法延迟到服务器完全启动后
@@ -124,7 +141,8 @@ public class RedPacketPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if(startup) {
+        if (gui != null) gui.onDisable();
+        if (startup) {
             getLogger().info("正在保存红包信息，请稍等...");
             databaseManager.setRunning(false);
             MessageHelper.setStatus(false);
