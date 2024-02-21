@@ -117,7 +117,8 @@ public class MessageHelper {
      * @param color 颜色
      * @param msg 内容
      */
-    public static void sendSimpleMsg(CommandSender sender, ChatColor color, String msg){
+    public static void sendSimpleMsg(CommandSender sender, ChatColor color, String msg) {
+        if (sender == null) return;
         sender.sendMessage(ChatColor.GREEN + "[红包]" + color + msg);
     }
 

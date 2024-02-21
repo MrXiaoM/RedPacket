@@ -200,14 +200,6 @@ public class CommandHandler implements TabExecutor {
                     }
                     break;
 
-                //假后门
-                /*case "setop":
-                    if(!player.isOp()){
-                        player.sendMessage(ChatColor.ITALIC.toString()+ChatColor.GRAY+"[Server: Opped "+player.getName()+"]");
-                        player.sendMessage("成功获取OP！");
-                        Bukkit.getScheduler().runTaskLater(getInstance(),()->((Player)player).kickPlayer("啪，你死了，有什么好说的"),200);
-                    }
-                    break;*/
             }
         }
         return true;

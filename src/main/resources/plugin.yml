@@ -1,8 +1,8 @@
 name: RedPacket
-version: ${project.version}
+version: ${version}
 main: sandtechnology.redpacket.RedPacketPlugin
 prefix: RedPacket
-authors: [ sandtechnology ]
+authors: [ sandtechnology, MrXiaoM ]
 description: RedPacket
 softdepend: [ Vault ]
 commands:

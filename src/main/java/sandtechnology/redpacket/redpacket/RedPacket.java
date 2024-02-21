@@ -73,7 +73,7 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
     private String extraData;
     private final long expireTime;
     private boolean expired;
-    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY/MM/dd HH:dd:ss.SSS O");
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS O");
     /**
      * 创建红包对象，只能通过内置的Builder创建
      *
@@ -400,12 +400,11 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
         }
     }
 
-    /***
+    /**
      * 生成红包的Builder
-     *
      * 参考资料：
      * Java 中的 Builder 模式和协变返回类型
-     * http://www.codebelief.com/article/2018/08/java-builder-pattern-and-covariant-return-type/
+     * <a href="http://www.codebelief.com/article/2018/08/java-builder-pattern-and-covariant-return-type/">CodeBelief</a>
      *
      * @see RedPacket
      */
