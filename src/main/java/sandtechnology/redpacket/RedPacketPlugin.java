@@ -1,6 +1,5 @@
 package sandtechnology.redpacket;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -25,6 +24,7 @@ public class RedPacketPlugin extends JavaPlugin {
     private static RedPacketPlugin instance;
     private static AbstractDatabaseManager databaseManager;
     private static GuiListener gui;
+    private final FoliaLibScheduler scheduler;
     private boolean startup;
 
     public static RedPacketPlugin getInstance() {
@@ -45,6 +45,7 @@ public class RedPacketPlugin extends JavaPlugin {
 
     public RedPacketPlugin() {
         instance = this;
+        scheduler = new FoliaLibScheduler(this);
     }
 
     public static AbstractDatabaseManager getDatabaseManager() {
@@ -78,6 +79,10 @@ public class RedPacketPlugin extends JavaPlugin {
             warn(e);
             return false;
         }
+    }
+
+    public FoliaLibScheduler getScheduler() {
+        return scheduler;
     }
 
     private void setIfAbsent(String node, Object value) {
@@ -152,7 +157,7 @@ public class RedPacketPlugin extends JavaPlugin {
             getLogger().info("注册完成！等待其他插件加载完成...");
             // 为避免需要的经济插件被放在该插件后面加载造成出错
             // 将调用Vault API的方法延迟到服务器完全启动后
-            Bukkit.getScheduler().runTask(this, () -> {
+            getScheduler().runTask(() -> {
                 getLogger().info("正在载入红包信息，请稍等...");
                 RedPacketManager.getRedPacketManager().setup();
                 MessageHelper.setStatus(true);
@@ -174,5 +179,6 @@ public class RedPacketPlugin extends JavaPlugin {
             MessageHelper.setStatus(false);
             getLogger().info("完成！继续服务器关闭程序...");
         }
+        scheduler.cancelTasks();
     }
 }

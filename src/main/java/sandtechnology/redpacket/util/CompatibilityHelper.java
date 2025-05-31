@@ -3,7 +3,6 @@ package sandtechnology.redpacket.util;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
-import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import sandtechnology.redpacket.RedPacketPlugin;
@@ -131,11 +130,11 @@ public class CompatibilityHelper {
         } else {
             if (version >= 8) {
                 //反射需要较长时间，采取异步处理再发送消息
-                Bukkit.getScheduler().runTaskAsynchronously(getInstance(), () -> {
+                getInstance().getScheduler().runTaskAsync(() -> {
                     Object connectionInstance = getDeclaredFieldAndGetIt(entityPlayer, "playerConnection", invoke(getHandle, player));
                     Object titlePacket = newInstance(CPacketPlayOutTitle, EnumTitleActions[0], invoke(toComponent, null, ComponentSerializer.toString(new TextComponent(title))));
                     Object subtitlePacket = newInstance(CPacketPlayOutTitle, EnumTitleActions[1], invoke(toComponent, null, ComponentSerializer.toString(new TextComponent(subtitle))));
-                    Bukkit.getScheduler().runTask(getInstance(), () -> {
+                    getInstance().getScheduler().runTask(() -> {
                         invoke(sendPacket, connectionInstance, titlePacket);
                         invoke(sendPacket, connectionInstance, subtitlePacket);
                     });
@@ -151,10 +150,10 @@ public class CompatibilityHelper {
             if (version >= 7) {
                 //https://www.spigotmc.org/threads/get-player-ping-with-reflection.147773/
                 //反射需要较长时间，采取异步处理再发送消息
-                Bukkit.getScheduler().runTaskAsynchronously(getInstance(), () -> {
+                getInstance().getScheduler().runTaskAsync(() -> {
                     Object playerInstance = invoke(getHandle, player);
                     Object JSONString = invoke(toComponent, null, ComponentSerializer.toString(components));
-                    Bukkit.getScheduler().runTask(getInstance(), () -> invoke(sendMessage, playerInstance, JSONString));
+                    getInstance().getScheduler().runTask(() -> invoke(sendMessage, playerInstance, JSONString));
                 });
             }
         }

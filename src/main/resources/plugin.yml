@@ -2,10 +2,16 @@ name: RedPacket
 version: ${version}
 main: sandtechnology.redpacket.RedPacketPlugin
 prefix: RedPacket
-authors: [ sandtechnology, MrXiaoM ]
+authors:
+  - sandtechnology
+  - MrXiaoM
 description: RedPacket
-softdepend: [ Vault, PlaceholderAPI, ItemsAdder ]
+softdepend:
+  - Vault
+  - PlaceholderAPI
+  - ItemsAdder
 api-version: 1.13
+folia-supported: true
 commands:
   RedPacket:
     permission: redpacket

@@ -164,7 +164,7 @@ public class CommandHandler implements TabExecutor {
                     if (checkArgs(args, 2, player) && checkSessionAndSetState(player, CreateSession.State.Init) && hasPermission(player, "redpacket.command.session")) {
                         switch (args[1].toLowerCase()) {
                             case "create":
-                                Bukkit.getScheduler().runTaskAsynchronously(getInstance(), () -> {
+                                getInstance().getScheduler().runTaskAsync(() -> {
                                     if (getSessionManager().getSession(player).getBuilder().isValid()) {
                                         RedPacket redPacket = getSessionManager().getSession(player).create();
                                         //生成提示信息
@@ -210,7 +210,7 @@ public class CommandHandler implements TabExecutor {
                                         //对专享红包进行判断
                                         //防止游戏体验降低
                                         if (redPacket.isLimitPlayer()) {
-                                            Bukkit.getScheduler().runTask(getInstance(), () -> {
+                                            getInstance().getScheduler().runTask(() -> {
                                                 broadcastSelectiveRedPacket(redPacket.getLimitPlayers(),
                                                         Lang.REDPACKET__NOTICE__LIMIT_TITLE.text(),
                                                         Lang.REDPACKET__NOTICE__LIMIT_SUBTITLE.text(
@@ -227,7 +227,7 @@ public class CommandHandler implements TabExecutor {
                                                         sendSimpleMsg(onlinePlayer, basicMessage);
                                                     });
                                         } else {
-                                            Bukkit.getScheduler().runTask(getInstance(), () -> {
+                                            getInstance().getScheduler().runTask(() -> {
                                                 broadcastRedPacket(
                                                         Lang.REDPACKET__NOTICE__NORMAL_TITLE.text(),
                                                         Lang.REDPACKET__NOTICE__NORMAL_SUBTITLE.text(
@@ -250,7 +250,7 @@ public class CommandHandler implements TabExecutor {
                     break;
                 case "get":
                     if (checkArgs(args, 2, player) && hasPermission(player, "redpacket.command.get")) {
-                        Bukkit.getScheduler().runTaskAsynchronously(getInstance(), () -> RedPacketManager.getRedPacketManager().getRedPackets().stream().filter(packet -> packet.getUUID().toString().equals(args[1])).forEach(redPacket -> redPacket.giveIfValid(player, "")));
+                        getInstance().getScheduler().runTaskAsync(() -> RedPacketManager.getRedPacketManager().getRedPackets().stream().filter(packet -> packet.getUUID().toString().equals(args[1])).forEach(redPacket -> redPacket.giveIfValid(player, "")));
                     }
                 case "info":
                     break;

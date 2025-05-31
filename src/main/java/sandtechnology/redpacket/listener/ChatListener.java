@@ -1,6 +1,5 @@
 package sandtechnology.redpacket.listener;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -30,7 +29,7 @@ public class ChatListener implements Listener {
         if(event.isAsynchronous()){
            checkRedPacket(event);
         }else {
-            Bukkit.getScheduler().runTaskAsynchronously(getInstance(),()->checkRedPacket(event));
+            getInstance().getScheduler().runTaskAsync(()->checkRedPacket(event));
         }
     }
 

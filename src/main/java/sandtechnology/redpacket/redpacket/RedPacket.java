@@ -288,7 +288,7 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
         double giveMoney = multiply(value, 0.01);
         getEco().depositPlayer(player, giveMoney);
         moneyMap.put(player.getUniqueId(), giveMoney);
-        Bukkit.getScheduler().runTask(getInstance(), () -> CompatibilityHelper.playMeowSound(player));
+        getInstance().getScheduler().runTask(() -> CompatibilityHelper.playMeowSound(player));
         broadcastMsg(ChatColor.YELLOW,
                 "玩家" + ChatColor.GOLD + player.getName() +
                         ChatColor.YELLOW + "抢了" + ChatColor.GOLD + this.player.getName() + ChatColor.YELLOW + "的红包" + "，抢到了" + ChatColor.GOLD + giveMoney + ChatColor.YELLOW + "元" + (type == RedPacketType.JieLongRedPacket ? "，下一个成语的音节是" + ChatColor.UNDERLINE + ChatColor.GREEN + getIdiomPinyin(extraData) : ""));

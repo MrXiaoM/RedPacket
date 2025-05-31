@@ -1,6 +1,5 @@
 package sandtechnology.redpacket.util;
 
-import org.bukkit.Bukkit;
 import sandtechnology.redpacket.redpacket.RedPacket;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public class RedPacketManager {
     public void setup() {
         redPackets.addAll(getDatabaseManager().getValid());
         redPackets.forEach(RedPacket::refundIfExpired);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(getInstance(),()->redPackets.forEach(RedPacket::refundIfExpired),200,20000);
+        getInstance().getScheduler().runTaskTimerAsync(()->redPackets.forEach(RedPacket::refundIfExpired),200,20000);
     }
 
     public void add(RedPacket redPacket) {
