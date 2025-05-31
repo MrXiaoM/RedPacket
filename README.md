@@ -8,7 +8,6 @@
 ./gradlew build
 ```
 构建目标 java 版本为 8。  
-仅支持 1.13+ 版本，如需更低版本请尝试删除 `plugin.yml` 中的 `api-version: 1.13`
 
 # 鸣谢
 + https://github.com/sandtechnology/RedPacket
