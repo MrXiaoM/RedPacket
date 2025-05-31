@@ -126,7 +126,7 @@ public class RedPacketPlugin extends JavaPlugin {
             saveDefaultConfig();
             getConfig();
             getLogger().info("初始化插件...");
-            CompatibilityHelper.setup();
+            CompatibilityHelper.setup(getLogger());
             EcoAndPermissionHelper.setup();
             IdiomManager.setup();
             getLogger().info("更新配置文件...");
