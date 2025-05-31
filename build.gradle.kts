@@ -1,29 +1,26 @@
 plugins {
     id("java")
     id("maven-publish")
-    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.gradleup.shadow") version "8.3.0"
 }
 
 group = "top.mrxiaom"
 version = "1.5.7"
 
 repositories {
-    mavenLocal()
     mavenCentral()
-    maven("https://maven.fastmirror.net/repositories/minecraft")
     maven("https://repo.codemc.io/repository/maven-public/")
-    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    maven("https://repo.helpch.at/releases/")
     maven("https://jitpack.io/")
-    maven("https://oss.sonatype.org/content/groups/public/")
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.20-R0.1-SNAPSHOT")
     compileOnly("net.milkbowl.vault:VaultAPI:1.7")
-    compileOnly("me.clip:placeholderapi:2.11.5")
-    compileOnly("com.github.LoneDev6:API-ItemsAdder:3.6.1")
-    implementation("org.jetbrains:annotations:19.0.0")
+    compileOnly("me.clip:placeholderapi:2.11.6")
+    compileOnly("com.github.LoneDev6:API-ItemsAdder:3.6.4")
+    implementation("org.jetbrains:annotations:24.0.0")
 }
 
 val targetJavaVersion = 8
@@ -37,8 +34,12 @@ java {
 tasks {
     shadowJar {
         archiveClassifier.set("")
-        relocate("org.intellij.lang.annotations", "sandtechnology.redpacket.util.annotations.intellij")
-        relocate("org.jetbrains.annotations", "sandtechnology.redpacket.util.annotations.jetbrains")
+        mapOf(
+            "org.intellij.lang.annotations" to "annotations.intellij",
+            "org.jetbrains.annotations" to "annotations.jetbrains",
+        ).forEach { (original, target) ->
+            relocate(original, "sandtechnology.redpacket.util.$target")
+        }
     }
     build {
         dependsOn(shadowJar)
