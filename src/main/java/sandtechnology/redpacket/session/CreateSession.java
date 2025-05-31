@@ -2,6 +2,7 @@ package sandtechnology.redpacket.session;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import sandtechnology.redpacket.RedPacketPlugin;
 import sandtechnology.redpacket.redpacket.RedPacket;
 import sandtechnology.redpacket.util.EcoAndPermissionHelper;
 import sandtechnology.redpacket.util.OperatorHelper;
@@ -9,32 +10,32 @@ import sandtechnology.redpacket.util.RedPacketManager;
 
 import java.util.UUID;
 
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
-import static sandtechnology.redpacket.session.SessionManager.getSessionManager;
 import static sandtechnology.redpacket.util.CommonHelper.checkAndDoSomething;
 import static sandtechnology.redpacket.util.CommonHelper.emptyFunction;
 import static sandtechnology.redpacket.util.MessageHelper.sendSimpleMsg;
 
 public class CreateSession {
+    private final RedPacketPlugin plugin;
     private final RedPacket.Builder builder;
     private final UUID playerUUID;
     private final long expiredTime;
     private State state;
 
-    CreateSession(Player player) {
-        playerUUID = player.getUniqueId();
-        builder = new RedPacket.Builder(player);
-        expiredTime = System.currentTimeMillis() + getInstance().getConfig().getLong("RedPacket.SessionExpiredTime");
-        state = State.Init;
+    CreateSession(RedPacketPlugin plugin, Player player) {
+        this.plugin = plugin;
+        this.playerUUID = player.getUniqueId();
+        this.builder = new RedPacket.Builder(plugin, player);
+        this.expiredTime = System.currentTimeMillis() + plugin.getConfig().getLong("RedPacket.SessionExpiredTime");
+        this.state = State.Init;
     }
 
     public void cancel() {
-        state = State.Cancel;
-        getSessionManager().remove(this);
+        this.state = State.Cancel;
+        plugin.getSessionManager().remove(this);
     }
 
     public State getState() {
-        return state;
+        return this.state;
     }
 
     /**
@@ -43,10 +44,10 @@ public class CreateSession {
      * @return 创建的红包
      */
     public RedPacket create() {
-        SessionManager.getSessionManager().remove(this);
+        plugin.getSessionManager().remove(this);
         RedPacket redPacket = builder.build();
         EcoAndPermissionHelper.getEco().withdrawPlayer(redPacket.getPlayer(), redPacket.getMoney());
-        RedPacketManager.getRedPacketManager().add(redPacket);
+        plugin.getRedPacketManager().add(redPacket);
         return redPacket;
     }
 
@@ -87,7 +88,7 @@ public class CreateSession {
     }
 
     public boolean isUnexpired() {
-        return checkAndDoSomething(expiredTime > System.currentTimeMillis(), emptyFunction, () -> getSessionManager().remove(this));
+        return checkAndDoSomething(expiredTime > System.currentTimeMillis(), emptyFunction, () -> plugin.getSessionManager().remove(this));
     }
 
     public boolean setState(State state) {
@@ -112,5 +113,14 @@ public class CreateSession {
         return Long.hashCode(expiredTime) + builder.hashCode();
     }
 
-    public enum State {Init, WaitAmount, WaitMoney, WaitGiveType, WaitType, WaitExtra, WaitGiver, Cancel}
+    public enum State {
+        Init,
+        WaitAmount,
+        WaitMoney,
+        WaitGiveType,
+        WaitType,
+        WaitExtra,
+        WaitGiver,
+        Cancel
+    }
 }

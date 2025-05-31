@@ -1,15 +1,19 @@
 package sandtechnology.redpacket.database;
 
+import sandtechnology.redpacket.RedPacketPlugin;
+
 import java.sql.DriverManager;
 
-import static sandtechnology.redpacket.RedPacketPlugin.config;
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
-
 public class SqliteManager extends AbstractDatabaseManager {
-
-
-    public SqliteManager(String tableName) {
+    private final RedPacketPlugin plugin;
+    public SqliteManager(RedPacketPlugin plugin, String tableName) {
+        this.plugin = plugin;
         setup(tableName);
+    }
+
+    @Override
+    public RedPacketPlugin getPlugin() {
+        return plugin;
     }
 
     @Override
@@ -17,7 +21,8 @@ public class SqliteManager extends AbstractDatabaseManager {
         try{
             Class.forName("org.sqlite.JDBC");
             this.tableName = tableName;
-            connection = DriverManager.getConnection("jdbc:sqlite:" + getInstance().getDataFolder().toPath().resolve(config().getString("Database.FileName")).toString());
+            String databaseFileName = plugin.getConfig().getString("Database.FileName", "database.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:" + plugin.getDataFolder().toPath().resolve(databaseFileName));
             executeUpdate(
                     "create table if not exists " + tableName + " (" +
                             "UUID Text PRIMARY KEY," +

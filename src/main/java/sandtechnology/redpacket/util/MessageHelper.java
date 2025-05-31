@@ -8,6 +8,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import sandtechnology.redpacket.RedPacketPlugin;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -18,7 +19,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.bukkit.Bukkit.getServer;
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
 import static sandtechnology.redpacket.util.JsonHelper.getGson;
 
 public class MessageHelper {
@@ -161,8 +161,8 @@ public class MessageHelper {
      * 初始化方法
      * @param status 设置状态。true为启动。false为禁用
      */
-    public static void setStatus(boolean status) {
-        Path path = getInstance().getDataFolder().toPath().resolve("PlayerData.json");
+    public static void setStatus(RedPacketPlugin plugin, boolean status) {
+        Path path = plugin.getDataFolder().toPath().resolve("PlayerData.json");
         if (status) {
             if (Files.exists(path)) {
                 try {

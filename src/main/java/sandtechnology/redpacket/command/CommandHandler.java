@@ -12,18 +12,16 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import sandtechnology.redpacket.Lang;
+import sandtechnology.redpacket.RedPacketPlugin;
 import sandtechnology.redpacket.gui.GuiNewRedPacket;
 import sandtechnology.redpacket.redpacket.RedPacket;
 import sandtechnology.redpacket.session.CreateSession;
+import sandtechnology.redpacket.session.SessionManager;
 import sandtechnology.redpacket.util.IdiomManager;
-import sandtechnology.redpacket.util.RedPacketManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static sandtechnology.redpacket.RedPacketPlugin.getGui;
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
-import static sandtechnology.redpacket.session.SessionManager.getSessionManager;
 import static sandtechnology.redpacket.util.CommonHelper.checkAndDoSomething;
 import static sandtechnology.redpacket.util.CommonHelper.emptyFunction;
 import static sandtechnology.redpacket.util.EcoAndPermissionHelper.canSet;
@@ -31,65 +29,68 @@ import static sandtechnology.redpacket.util.EcoAndPermissionHelper.hasPermission
 import static sandtechnology.redpacket.util.MessageHelper.*;
 
 public class CommandHandler implements TabExecutor {
-    private static final CommandHandler commandHandler = new CommandHandler();
-
-    public static CommandHandler getCommandHandler() {
-        return commandHandler;
+    private final RedPacketPlugin plugin;
+    public CommandHandler(RedPacketPlugin plugin) {
+        this.plugin = plugin;
     }
 
-
     private boolean checkArgs(String[] args, int length, CommandSender sender) {
-        return checkAndDoSomething(args.length >= length, emptyFunction, () -> Lang.COMMANDS__INVALID_ARGUMENT.t(sender));
+        return checkAndDoSomething(args.length >= length,
+                emptyFunction,
+                () -> Lang.COMMANDS__INVALID_ARGUMENT.t(sender));
     }
 
     private boolean checkSessionAndSetState(Player sender, CreateSession.State state) {
-        return checkAndDoSomething(getSessionManager().hasSession(sender) && getSessionManager().getSession(sender).setState(state), emptyFunction, () -> sendSimpleMsg(sender, new ComponentBuilder(ChatColor.GREEN + "创建会话已失效，请点击这里重新创建！").event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/redpacket new")).create()));
+        return checkAndDoSomething(plugin.getSessionManager().hasSession(sender) && plugin.getSessionManager().getSession(sender).setState(state),
+                emptyFunction,
+                () -> sendSimpleMsg(sender, new ComponentBuilder(ChatColor.GREEN + "创建会话已失效，请点击这里重新创建！").event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/redpacket new")).create()));
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (sender instanceof Player && checkArgs(args, 1, sender)) {
             Player player = (Player) sender;
+            SessionManager sessionManager = plugin.getSessionManager();
             switch (args[0].toLowerCase()) {
                 case "add":
                 case "new":
                     if (hasPermission(player, "redpacket.command.new")) {
                         Lang.COMMANDS__NEW__CREATING_SESSION.t(player);
-                        sendSimpleMsg(player, getSessionManager().createSession(player).getBuilder().getInfo());
+                        sendSimpleMsg(player, sessionManager.createSession(player).getBuilder().getInfo());
                     }
                     break;
                 case "set":
-                    if (checkArgs(args, 3, player) && getSessionManager().hasSession(player)) {
+                    if (checkArgs(args, 3, player) && sessionManager.hasSession(player)) {
                         switch (args[1]) {
                             case "type":
                                 switch (args[2].toLowerCase()) {
                                     case "normal":
                                         if (canSet(player, RedPacket.RedPacketType.CommonRedPacket)) {
-                                            getSessionManager().getSession(player).getBuilder().type(RedPacket.RedPacketType.CommonRedPacket);
+                                            sessionManager.getSession(player).getBuilder().type(RedPacket.RedPacketType.CommonRedPacket);
                                         }
                                         break;
                                     case "password":
                                         if (canSet(player, RedPacket.RedPacketType.PasswordRedPacket)) {
-                                            getSessionManager().getSession(player).getBuilder().type(RedPacket.RedPacketType.PasswordRedPacket);
+                                            sessionManager.getSession(player).getBuilder().type(RedPacket.RedPacketType.PasswordRedPacket);
                                         }
                                         break;
                                     case "jielong":
                                         if (canSet(player, RedPacket.RedPacketType.JieLongRedPacket)) {
-                                            getSessionManager().getSession(player).getBuilder().type(RedPacket.RedPacketType.JieLongRedPacket);
-                                            getSessionManager().getSession(player).getBuilder().extraData(IdiomManager.getRandomIdiom());
+                                            sessionManager.getSession(player).getBuilder().type(RedPacket.RedPacketType.JieLongRedPacket);
+                                            sessionManager.getSession(player).getBuilder().extraData(IdiomManager.getRandomIdiom());
                                         }
                                 }
                                 break;
                             case "givetype":
                                 switch (args[2].toLowerCase()) {
                                     case "fixed":
-                                        getSessionManager().getSession(player).getBuilder().giveType(RedPacket.GiveType.FixAmount);
+                                        sessionManager.getSession(player).getBuilder().giveType(RedPacket.GiveType.FixAmount);
                                         break;
                                     case "luck":
-                                        getSessionManager().getSession(player).getBuilder().giveType(RedPacket.GiveType.LuckyAmount);
+                                        sessionManager.getSession(player).getBuilder().giveType(RedPacket.GiveType.LuckyAmount);
                                 }
                         }
-                        sendSimpleMsg(player, getSessionManager().getSession(player).getBuilder().getInfo());
+                        sendSimpleMsg(player, sessionManager.getSession(player).getBuilder().getInfo());
                     }
                     break;
                 case "password": {
@@ -104,7 +105,7 @@ public class CommandHandler implements TabExecutor {
                     break;
                 }
                 case "gui":
-                    getGui().openGui(new GuiNewRedPacket(player));
+                    plugin.getGuiManager().openGui(new GuiNewRedPacket(plugin, player));
                     break;
                 case "query":
                     if (checkArgs(args, 2, player)) {
@@ -151,7 +152,7 @@ public class CommandHandler implements TabExecutor {
                                 if (checkSessionAndSetState(player, CreateSession.State.WaitExtra)) {
                                     Lang.COMMANDS__QUERY__EXTRA_DATA_TIPS.t(player,
                                             "%extra_info%",
-                                            getSessionManager().getSession(player).getBuilder().getExtraDataInfo()
+                                            sessionManager.getSession(player).getBuilder().getExtraDataInfo()
                                     );
                                 }
                                 break;
@@ -164,9 +165,9 @@ public class CommandHandler implements TabExecutor {
                     if (checkArgs(args, 2, player) && checkSessionAndSetState(player, CreateSession.State.Init) && hasPermission(player, "redpacket.command.session")) {
                         switch (args[1].toLowerCase()) {
                             case "create":
-                                getInstance().getScheduler().runTaskAsync(() -> {
-                                    if (getSessionManager().getSession(player).getBuilder().isValid()) {
-                                        RedPacket redPacket = getSessionManager().getSession(player).create();
+                                plugin.getScheduler().runTaskAsync(() -> {
+                                    if (sessionManager.getSession(player).getBuilder().isValid()) {
+                                        RedPacket redPacket = sessionManager.getSession(player).create();
                                         //生成提示信息
                                         BaseComponent text;
                                         if (redPacket.isLimitPlayer()) {
@@ -210,7 +211,7 @@ public class CommandHandler implements TabExecutor {
                                         //对专享红包进行判断
                                         //防止游戏体验降低
                                         if (redPacket.isLimitPlayer()) {
-                                            getInstance().getScheduler().runTask(() -> {
+                                            plugin.getScheduler().runTask(() -> {
                                                 broadcastSelectiveRedPacket(redPacket.getLimitPlayers(),
                                                         Lang.REDPACKET__NOTICE__LIMIT_TITLE.text(),
                                                         Lang.REDPACKET__NOTICE__LIMIT_SUBTITLE.text(
@@ -227,7 +228,7 @@ public class CommandHandler implements TabExecutor {
                                                         sendSimpleMsg(onlinePlayer, basicMessage);
                                                     });
                                         } else {
-                                            getInstance().getScheduler().runTask(() -> {
+                                            plugin.getScheduler().runTask(() -> {
                                                 broadcastRedPacket(
                                                         Lang.REDPACKET__NOTICE__NORMAL_TITLE.text(),
                                                         Lang.REDPACKET__NOTICE__NORMAL_SUBTITLE.text(
@@ -243,14 +244,14 @@ public class CommandHandler implements TabExecutor {
                                 });
                                 break;
                             case "cancel":
-                                getSessionManager().getSession(player).cancel();
+                                sessionManager.getSession(player).cancel();
                                 Lang.COMMANDS__SESSION__CANCEL.t(player);
                         }
                     }
                     break;
                 case "get":
                     if (checkArgs(args, 2, player) && hasPermission(player, "redpacket.command.get")) {
-                        getInstance().getScheduler().runTaskAsync(() -> RedPacketManager.getRedPacketManager().getRedPackets().stream().filter(packet -> packet.getUUID().toString().equals(args[1])).forEach(redPacket -> redPacket.giveIfValid(player, "")));
+                        plugin.getScheduler().runTaskAsync(() -> plugin.getRedPacketManager().getRedPackets().stream().filter(packet -> packet.getUUID().toString().equals(args[1])).forEach(redPacket -> redPacket.giveIfValid(player, "")));
                     }
                 case "info":
                     break;
@@ -259,7 +260,9 @@ public class CommandHandler implements TabExecutor {
                     break;
                 case "reload":
                     if (hasPermission(player, "redpacket.command.reload")) {
-                        checkAndDoSomething(getInstance().reload(), () -> Lang.COMMANDS__RELOAD__SUCCESS.t(player), () -> Lang.COMMANDS__RELOAD__FAILED.t(player));
+                        checkAndDoSomething(plugin.reload(),
+                                () -> Lang.COMMANDS__RELOAD__SUCCESS.t(player),
+                                () -> Lang.COMMANDS__RELOAD__FAILED.t(player));
                     }
                     break;
 

@@ -1,6 +1,7 @@
 package sandtechnology.redpacket.util;
 
 import com.google.gson.Gson;
+import sandtechnology.redpacket.RedPacketPlugin;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,9 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.logging.Level;
-
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
-import static sandtechnology.redpacket.RedPacketPlugin.log;
 
 //copy and merge form JieLong/src/main/java/top/seraphjack/jielong/idiom
 //https://github.com/SeraphJACK/JieLong
@@ -38,25 +36,25 @@ public class IdiomManager {
         idiomList.addAll(idiomMap.keySet());
     }
 
-    public static void setup() {
+    public static void setup(RedPacketPlugin plugin) {
         long startTime = System.currentTimeMillis();
-        log(Level.INFO, "从Jar中加载成语数据库(idiom.json)...");
-        InputStream fis = getInstance().getClass().getClassLoader().getResourceAsStream("idiom.json");
+        plugin.log(Level.INFO, "从Jar中加载成语数据库(idiom.json)...");
+        InputStream fis = plugin.getClass().getClassLoader().getResourceAsStream("idiom.json");
         if (fis == null) {
-            log(Level.SEVERE, "idiom.json丢失！将无法进行成语接龙！");
+            plugin.log(Level.SEVERE, "idiom.json丢失！将无法进行成语接龙！");
             throw new RuntimeException("idiom.json丢失！将无法进行成语接龙！");
         }
         Gson gson = new Gson();
         POJOIdiom[] idioms = gson.fromJson(new InputStreamReader(fis, StandardCharsets.UTF_8), POJOIdiom[].class);
         Arrays.stream(idioms).forEach(i -> idiomMap.put(i.word, i));
         idiomList.addAll(idiomMap.keySet());
-        log(Level.INFO, "成语数据库载入完成，花费了" + (System.currentTimeMillis() - startTime) + "毫秒。");
+        plugin.log(Level.INFO, "成语数据库载入完成，花费了" + (System.currentTimeMillis() - startTime) + "毫秒。");
     }
 
-    public static void reload() {
+    public static void reload(RedPacketPlugin plugin) {
         idiomMap.clear();
         idiomList.clear();
-        setup();
+        setup(plugin);
     }
 
     public static boolean isValidIdiom(String idiom) {

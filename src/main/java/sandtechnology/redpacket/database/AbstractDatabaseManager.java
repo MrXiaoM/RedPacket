@@ -1,11 +1,13 @@
 package sandtechnology.redpacket.database;
 
 import org.bukkit.entity.Player;
+import sandtechnology.redpacket.RedPacketPlugin;
 import sandtechnology.redpacket.redpacket.RedPacket;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -25,13 +27,18 @@ public abstract class AbstractDatabaseManager {
         }
     }
 
+    public abstract RedPacketPlugin getPlugin();
+
     void executeUpdate(String sql) {
         try {
             while (commiting) {
                 //System.out.println("Waiting commit");
                 sleep();
             }
-            getConnection().createStatement().executeUpdate(sql);
+            Connection conn = getConnection();
+            try (Statement s = conn.createStatement()) {
+                s.executeUpdate(sql);
+            }
         } catch (SQLException ex) {
             throw new RuntimeException("SQL语句执行错误！语句：" + sql, ex);
         }
@@ -41,7 +48,10 @@ public abstract class AbstractDatabaseManager {
 
     private ResultSet executeQuery(String sql) {
         try {
-            return getConnection().createStatement().executeQuery(sql);
+            Connection conn = getConnection();
+            try (Statement s = conn.createStatement()) {
+                return s.executeQuery(sql);
+            }
         } catch (SQLException ex) {
             throw new RuntimeException("SQL语句执行错误！语句：" + sql, ex);
         }
@@ -55,7 +65,7 @@ public abstract class AbstractDatabaseManager {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                long time = System.currentTimeMillis();
+                // long time = System.currentTimeMillis();
                 if (running) {
                     commit();
                     // System.out.println("commit! time cost: " + (System.currentTimeMillis() - time) + " ms");
@@ -116,10 +126,10 @@ public abstract class AbstractDatabaseManager {
      * @return 可被领取的红包list
      */
     public List<RedPacket> getValid() {
-        long time = System.currentTimeMillis();
+        // long time = System.currentTimeMillis();
         ResultSet resultSet = executeQuery("Select * from " + tableName + " where expired=0 and amount!=0");
-        //System.out.println("Init Query Time:" + (System.currentTimeMillis() - time) + " ms");
-        return RedPacket.fromSQL(resultSet);
+        // System.out.println("Init Query Time:" + (System.currentTimeMillis() - time) + " ms");
+        return RedPacket.fromSQL(getPlugin(), resultSet);
     }
 
     public RedPacket get(Player player) {
@@ -131,10 +141,10 @@ public abstract class AbstractDatabaseManager {
     }
 
     private List<RedPacket> getNext(Player player, int amount, int offset) {
-        long time = System.currentTimeMillis();
+        // long time = System.currentTimeMillis();
         ResultSet resultSet = executeQuery("Select * from " + tableName + " where playerUUID='" + player.getUniqueId().toString() + "' order by expireTime desc LIMIT " + amount + " OFFSET " + offset);
-       // System.out.println("Query Time:" + (System.currentTimeMillis() - time) + " ms");
-        return RedPacket.fromSQL(resultSet);
+        // System.out.println("Query Time:" + (System.currentTimeMillis() - time) + " ms");
+        return RedPacket.fromSQL(getPlugin(), resultSet);
     }
 
 

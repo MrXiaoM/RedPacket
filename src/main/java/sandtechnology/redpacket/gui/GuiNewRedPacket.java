@@ -11,20 +11,17 @@ import sandtechnology.redpacket.Lang;
 import sandtechnology.redpacket.RedPacketPlugin;
 import sandtechnology.redpacket.session.CreateSession;
 
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
-import static sandtechnology.redpacket.session.SessionManager.getSessionManager;
-
 public class GuiNewRedPacket implements IGui {
     public final RedPacketPlugin plugin;
     public final FileConfiguration config;
     public final Player player;
     boolean confirm = false;
     CreateSession session;
-    public GuiNewRedPacket(Player player) {
+    public GuiNewRedPacket(RedPacketPlugin plugin, Player player) {
+        this.plugin = plugin;
         this.player = player;
-        this.plugin = getInstance();
         this.config = plugin.getConfig();
-        session = getSessionManager().createSession(player);
+        session = plugin.getSessionManager().createSession(player);
     }
     @Override
     public Player getPlayer() {

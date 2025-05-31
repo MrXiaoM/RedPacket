@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import sandtechnology.redpacket.RedPacketPlugin;
 import sandtechnology.redpacket.util.CompatibilityHelper;
 import sandtechnology.redpacket.util.IdiomManager;
 import sandtechnology.redpacket.util.OperatorHelper;
@@ -34,8 +35,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static sandtechnology.redpacket.RedPacketPlugin.getDatabaseManager;
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
 import static sandtechnology.redpacket.util.EcoAndPermissionHelper.canGet;
 import static sandtechnology.redpacket.util.EcoAndPermissionHelper.getEco;
 import static sandtechnology.redpacket.util.IdiomManager.getIdiomPinyin;
@@ -48,7 +47,6 @@ import static sandtechnology.redpacket.util.OperatorHelper.add;
 import static sandtechnology.redpacket.util.OperatorHelper.divide;
 import static sandtechnology.redpacket.util.OperatorHelper.multiply;
 import static sandtechnology.redpacket.util.OperatorHelper.toTwoPrecision;
-import static sandtechnology.redpacket.util.RedPacketManager.getRedPacketManager;
 
 /**
  *
@@ -57,11 +55,10 @@ import static sandtechnology.redpacket.util.RedPacketManager.getRedPacketManager
  *
  */
 public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
-
-
     private static final Random random = new Random();
     private static final Type moneyMapType = new TypeToken<LinkedHashMap<UUID, Double>>() {}.getType();
     private static final Type giversType = new TypeToken<HashSet<UUID>>() {}.getType();
+    private final RedPacketPlugin plugin;
     private final OfflinePlayer player;
     private final RedPacketType type;
     private final GiveType giveType;
@@ -77,6 +74,7 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
     /**
      * 创建红包对象，只能通过内置的Builder创建
      *
+     * @param plugin     插件实例
      * @param uuid       红包唯一识别码
      * @param player     发起红包的玩家
      * @param giveType   给予的类型
@@ -84,12 +82,13 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
      * @param amount     红包数量
      * @param money      红包总额
      * @param moneyMap   记录玩家领取红包的数据映射
-     * @param givers     能领取红包的玩家
      * @param extraData  额外数据，存储口令、祝福、成语...
-     * @param timeZone   时区，实际上是ZoneId
+     * @param givers     能领取红包的玩家
      * @param expireTime 过期时间，以1970-01-01 00:00 UTC到当前时区的时间的毫秒数存储
+     * @param timeZone   时区，实际上是ZoneId
      */
-    private RedPacket(UUID uuid, OfflinePlayer player, GiveType giveType, RedPacketType type, int amount, double money, Map<UUID, Double> moneyMap, String extraData,Set<UUID> givers, long expireTime,ZoneId timeZone, boolean expired) {
+    private RedPacket(RedPacketPlugin plugin, UUID uuid, OfflinePlayer player, GiveType giveType, RedPacketType type, int amount, double money, Map<UUID, Double> moneyMap, String extraData, Set<UUID> givers, long expireTime, ZoneId timeZone, boolean expired) {
+        this.plugin = plugin;
         this.player = player;
         //注：为防止精度问题，此处将其乘以100来使用int存储
         this.money = (int) multiply(money, 100);
@@ -111,13 +110,13 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
      * @param sqlData 结果集
      * @return 包含红包的列表，如无红包将为空列表
      */
-    public static List<RedPacket> fromSQL(ResultSet sqlData) {
+    public static List<RedPacket> fromSQL(RedPacketPlugin plugin, ResultSet sqlData) {
         List<RedPacket> list = new ArrayList<>();
         try {
             while (sqlData.next()) {
                 int i = 0;
                 //UUID,playerUUID,RedPacketType,giveType,amount,money,moneyMap,extraData,className,expireTime,expired
-                list.add(new Builder()
+                list.add(new Builder(plugin)
                         //1
                         .uuid(UUID.fromString(sqlData.getString(++i)))
                         //2
@@ -228,12 +227,12 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
      */
     synchronized public void refundIfExpired() {
         try {
-            if (System.currentTimeMillis() > expireTime && !expired && amount != 0 && getInstance().getConfig().getBoolean("RedPacket.Expired")) {
+            if (System.currentTimeMillis() > expireTime && !expired && amount != 0 && plugin.getConfig().getBoolean("RedPacket.Expired")) {
                 sendServiceMsg(player, ChatColor.GREEN, "您的红包已过期，已退还" + getCurrentMoney() + "元");
                 getEco().depositPlayer(player, getCurrentMoney());
                 expired = true;
-                getDatabaseManager().update(this);
-                getRedPacketManager().remove(this);
+                plugin.getDatabaseManager().update(this);
+                plugin.getRedPacketManager().remove(this);
             }
         } catch (Exception e) {
             throw new RuntimeException("红包退还失败！", e);
@@ -288,15 +287,15 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
         double giveMoney = multiply(value, 0.01);
         getEco().depositPlayer(player, giveMoney);
         moneyMap.put(player.getUniqueId(), giveMoney);
-        getInstance().getScheduler().runTask(() -> CompatibilityHelper.playMeowSound(player));
+        plugin.getScheduler().runTask(() -> CompatibilityHelper.playMeowSound(player));
         broadcastMsg(ChatColor.YELLOW,
                 "玩家" + ChatColor.GOLD + player.getName() +
                         ChatColor.YELLOW + "抢了" + ChatColor.GOLD + this.player.getName() + ChatColor.YELLOW + "的红包" + "，抢到了" + ChatColor.GOLD + giveMoney + ChatColor.YELLOW + "元" + (type == RedPacketType.JieLongRedPacket ? "，下一个成语的音节是" + ChatColor.UNDERLINE + ChatColor.GREEN + getIdiomPinyin(extraData) : ""));
 
         amount--;
-        getDatabaseManager().update(this);
+        plugin.getDatabaseManager().update(this);
         if (amount == 0) {
-            getRedPacketManager().remove(this);
+            plugin.getRedPacketManager().remove(this);
             broadcastMsg(ChatColor.YELLOW, "玩家" + ChatColor.GOLD + this.player.getName() + ChatColor.YELLOW + "的红包已被抢完，" + ChatColor.GOLD + moneyMap.entrySet().parallelStream().max(Comparator.comparing(Map.Entry::getValue)).map(x -> Bukkit.getServer().getOfflinePlayer(x.getKey()).getName()).orElse("无人") + ChatColor.YELLOW + "是运气王");
         }
     }
@@ -409,6 +408,7 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
      * @see RedPacket
      */
     public static class Builder {
+        private final RedPacketPlugin plugin;
         private Map<UUID, Double> moneyMap = new LinkedHashMap<>();
         private OfflinePlayer player;
         private double money;
@@ -422,7 +422,7 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
         private Set<UUID> givers=new HashSet<>();
         private ZoneId timeZone=ZoneId.systemDefault();
         //过期时间
-        private long expireTime = System.currentTimeMillis() + getInstance().getConfig().getLong("RedPacket.ExpiredTime");
+        private long expireTime;
 
         //初始化
         static {
@@ -432,20 +432,23 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
             checkMap.put((builder) -> OperatorHelper.divide(builder.money, builder.amount) >= 0.01, "红包平均最低金额不能低于0.01！");
             checkMap.put((builder) -> builder.type != RedPacketType.PasswordRedPacket || !builder.extraData.contains("§") && !builder.extraData.startsWith("/"), "口令红包不能包含样式代码和命令！");
             checkMap.put((builder) -> builder.type != RedPacketType.JieLongRedPacket || IdiomManager.isValidIdiom(builder.extraData), "该成语无效！");
-            checkMap.put((builder) -> getInstance().getConfig().getDouble("RedPacket.MaxMoney") >= builder.money, "红包总额不能超出{MaxMoney}！");
-            checkMap.put((builder) -> getInstance().getConfig().getInt("RedPacket.MaxAmount") >= builder.amount, "红包数量不能超出{MaxAmount}！");
-            checkMap.put((builder) -> getInstance().getConfig().getDouble("RedPacket.MinMoney") <= builder.money, "红包总额不能小于{MinMoney}！");
+            checkMap.put((builder) -> builder.plugin.getConfig().getDouble("RedPacket.MaxMoney") >= builder.money, "红包总额不能超出{MaxMoney}！");
+            checkMap.put((builder) -> builder.plugin.getConfig().getInt("RedPacket.MaxAmount") >= builder.amount, "红包数量不能超出{MaxAmount}！");
+            checkMap.put((builder) -> builder.plugin.getConfig().getDouble("RedPacket.MinMoney") <= builder.money, "红包总额不能小于{MinMoney}！");
         }
 
         private String extraData = "恭喜发财";
 
 
         //内部创建红包方法
-        Builder() {
+        Builder(RedPacketPlugin plugin) {
+            this.plugin = plugin;
+            this.expireTime = System.currentTimeMillis() + plugin.getConfig().getLong("RedPacket.ExpiredTime");
         }
 
         //外部创建红包方法
-        public Builder(Player player) {
+        public Builder(RedPacketPlugin plugin, Player player) {
+            this(plugin);
             this.player = player;
         }
 
@@ -504,7 +507,7 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
             } else {
                 Matcher matcher = Pattern.compile("\\{?([^{}]+)}+").matcher(result);
                 while (matcher.find()) {
-                    result = matcher.replaceAll(getInstance().getConfig().getString("RedPacket." + matcher.group(1)));
+                    result = matcher.replaceAll(plugin.getConfig().getString("RedPacket." + matcher.group(1)));
                 }
                 sendSimpleMsg(player.getPlayer(), ChatColor.RED, result);
                 return false;
@@ -537,7 +540,7 @@ public class RedPacket implements Comparator<RedPacket>, Comparable<RedPacket> {
         }
 
         public RedPacket build() {
-            return new RedPacket(uuid, player, givetype, type, amount, money, moneyMap, extraData,givers, expireTime,timeZone, expired);
+            return new RedPacket(plugin, uuid, player, givetype, type, amount, money, moneyMap, extraData, givers, expireTime, timeZone, expired);
         }
 
         @Override

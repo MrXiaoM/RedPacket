@@ -1,6 +1,7 @@
 package sandtechnology.redpacket.session;
 
 import org.bukkit.entity.Player;
+import sandtechnology.redpacket.RedPacketPlugin;
 
 import java.util.Map;
 import java.util.UUID;
@@ -10,13 +11,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 会话管理
  */
 public class SessionManager {
-
-
-    private static final SessionManager sessionManager=new SessionManager();
-    private final Map<UUID,CreateSession> sessions=new ConcurrentHashMap<>();
-
-    public static SessionManager getSessionManager() {
-        return sessionManager;
+    private final RedPacketPlugin plugin;
+    private final Map<UUID,CreateSession> sessions = new ConcurrentHashMap<>();
+    public SessionManager(RedPacketPlugin plugin) {
+        this.plugin = plugin;
     }
 
     public Map<UUID, CreateSession> getSessions() {
@@ -44,7 +42,7 @@ public class SessionManager {
         if (hasSession(player) && getSession(player).isUnexpired()) {
             return getSession(player);
         }else {
-            CreateSession session=new CreateSession(player);
+            CreateSession session=new CreateSession(plugin, player);
             sessions.put(player.getUniqueId(),session);
             return session;
         }

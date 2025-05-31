@@ -14,6 +14,7 @@ public interface IGui {
 	void onDrag(InventoryView view, InventoryDragEvent event);
 	void onClose(InventoryView view);
 	default void refresh(){
-		RedPacketPlugin.getGui().openGui(this);
+		RedPacketPlugin plugin = RedPacketPlugin.getInstance();
+		plugin.getScheduler().runTask(() -> plugin.getGuiManager().openGui(this));
 	}
 }

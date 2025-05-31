@@ -1,32 +1,40 @@
 package sandtechnology.redpacket.database;
 
+import org.bukkit.configuration.file.FileConfiguration;
+import sandtechnology.redpacket.RedPacketPlugin;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import static sandtechnology.redpacket.RedPacketPlugin.config;
-
 public class MysqlManager extends AbstractDatabaseManager {
-
-    public MysqlManager(String tableName) {
+    private final RedPacketPlugin plugin;
+    public MysqlManager(RedPacketPlugin plugin, String tableName) {
+        this.plugin = plugin;
         setup(tableName);
     }
 
     @Override
+    public RedPacketPlugin getPlugin() {
+        return plugin;
+    }
+
+    @Override
     public Connection getConnection() {
-        String argument = config().getString("Database.MySQLArgument");
+        FileConfiguration config = plugin.getConfig();
+        String argument = config.getString("Database.MySQLArgument");
         try {
             if (connection == null || !connection.isValid(800)) {
                 connection = DriverManager.getConnection(
                         "jdbc:mysql://"
-                                + config().getString("Database.IP")
+                                + config.getString("Database.IP")
                                 + ":"
-                                + config().getInt("Database.Port")
+                                + config.getInt("Database.Port")
                                 + "/"
-                                + config().getString("Database.DatabaseName")
-                                + (argument.equals("null") ? "" : argument)
-                        , config().getString("Database.UserName")
-                        , config().getString("Database.Password")
+                                + config.getString("Database.DatabaseName")
+                                + (argument == null ? "" : argument)
+                        , config.getString("Database.UserName")
+                        , config.getString("Database.Password")
                 );
                 connection.setAutoCommit(false);
             }

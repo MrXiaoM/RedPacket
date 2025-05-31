@@ -11,6 +11,7 @@ import sandtechnology.redpacket.database.SqliteManager;
 import sandtechnology.redpacket.listener.ChatListener;
 import sandtechnology.redpacket.listener.GuiListener;
 import sandtechnology.redpacket.listener.MessageSender;
+import sandtechnology.redpacket.session.SessionManager;
 import sandtechnology.redpacket.util.*;
 
 import java.io.File;
@@ -20,11 +21,12 @@ import java.io.StringWriter;
 import java.util.logging.Level;
 
 public class RedPacketPlugin extends JavaPlugin {
-
     private static RedPacketPlugin instance;
-    private static AbstractDatabaseManager databaseManager;
-    private static GuiListener gui;
     private final FoliaLibScheduler scheduler;
+    private AbstractDatabaseManager databaseManager;
+    private GuiListener guiManager;
+    private SessionManager sessionManager;
+    private RedPacketManager redPacketManager;
     private boolean startup;
 
     public static RedPacketPlugin getInstance() {
@@ -35,12 +37,8 @@ public class RedPacketPlugin extends JavaPlugin {
         }
     }
 
-    public static GuiListener getGui() {
-        if (gui != null) {
-            return gui;
-        } else {
-            throw new IllegalStateException("插件未正常开启！请查看报错信息");
-        }
+    public GuiListener getGuiManager() {
+        return guiManager;
     }
 
     public RedPacketPlugin() {
@@ -48,19 +46,23 @@ public class RedPacketPlugin extends JavaPlugin {
         scheduler = new FoliaLibScheduler(this);
     }
 
-    public static AbstractDatabaseManager getDatabaseManager() {
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
+
+    public RedPacketManager getRedPacketManager() {
+        return redPacketManager;
+    }
+
+    public AbstractDatabaseManager getDatabaseManager() {
         return databaseManager;
     }
 
-    public static FileConfiguration config() {
-        return instance.getConfig();
+    public void log(Level level, String msg, Object... format) {
+        getLogger().log(level, String.format(msg, format));
     }
 
-    public static void log(Level level, String msg, Object... format) {
-        getInstance().getLogger().log(level, String.format(msg, format));
-    }
-
-    public static void warn(Throwable t) {
+    public void warn(Throwable t) {
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
             t.printStackTrace(pw);
@@ -70,9 +72,9 @@ public class RedPacketPlugin extends JavaPlugin {
 
     public boolean reload() {
         try {
-            getInstance().reloadConfig();
+            reloadConfig();
             updateConfig();
-            IdiomManager.reload();
+            IdiomManager.reload(this);
             loadMessages();
             return true;
         } catch (Exception e) {
@@ -129,28 +131,36 @@ public class RedPacketPlugin extends JavaPlugin {
         }
         try {
             saveDefaultConfig();
-            getConfig();
+            FileConfiguration config = getConfig();
+
             getLogger().info("初始化插件...");
-            CompatibilityHelper.setup(getLogger());
-            EcoAndPermissionHelper.setup();
-            IdiomManager.setup();
+            CompatibilityHelper.setup(this);
+            EcoAndPermissionHelper.setup(this);
+            IdiomManager.setup(this);
+            this.sessionManager = new SessionManager(this);
+            this.redPacketManager = new RedPacketManager(this);
+
             getLogger().info("更新配置文件...");
             loadMessages();
             updateConfig();
-            if (config().getString("Database.Type", "sqlite").equalsIgnoreCase("sqlite")) {
-                databaseManager = new SqliteManager(config().getString("Database.TableName"));
+            String tableName = config.getString("Database.TableName", "redpacket");
+            if (config.getString("Database.Type", "sqlite").equalsIgnoreCase("sqlite")) {
+                databaseManager = new SqliteManager(this, tableName);
             } else {
-                databaseManager = new MysqlManager(config().getString("Database.TableName"));
+                databaseManager = new MysqlManager(this, tableName);
             }
+
             getLogger().info("注册监听器...");
-            getServer().getPluginManager().registerEvents(new ChatListener(), this);
+            getServer().getPluginManager().registerEvents(new ChatListener(this), this);
             getServer().getPluginManager().registerEvents(new MessageSender(), this);
-            gui = new GuiListener(this);
+            guiManager = new GuiListener(this);
+
             getLogger().info("注册命令...");
             PluginCommand command = getCommand("RedPacket");
             if (command != null) {
-                command.setExecutor(CommandHandler.getCommandHandler());
-                command.setTabCompleter(CommandHandler.getCommandHandler());
+                CommandHandler handler = new CommandHandler(this);
+                command.setExecutor(handler);
+                command.setTabCompleter(handler);
             } else {
                 getLogger().warning("命令注册失败: 未找到");
             }
@@ -159,8 +169,8 @@ public class RedPacketPlugin extends JavaPlugin {
             // 将调用Vault API的方法延迟到服务器完全启动后
             getScheduler().runTask(() -> {
                 getLogger().info("正在载入红包信息，请稍等...");
-                RedPacketManager.getRedPacketManager().setup();
-                MessageHelper.setStatus(true);
+                redPacketManager.setup();
+                MessageHelper.setStatus(this, true);
                 getLogger().info("初始化插件完成！");
                 startup = true;
             });
@@ -172,11 +182,11 @@ public class RedPacketPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (gui != null) gui.onDisable();
+        if (guiManager != null) guiManager.onDisable();
         if (startup) {
             getLogger().info("正在保存红包信息，请稍等...");
             databaseManager.setRunning(false);
-            MessageHelper.setStatus(false);
+            MessageHelper.setStatus(this, false);
             getLogger().info("完成！继续服务器关闭程序...");
         }
         scheduler.cancelTasks();

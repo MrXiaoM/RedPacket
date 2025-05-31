@@ -3,6 +3,7 @@ package sandtechnology.redpacket.util;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import sandtechnology.redpacket.RedPacketPlugin;
@@ -11,11 +12,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static org.bukkit.Bukkit.getServer;
-import static sandtechnology.redpacket.RedPacketPlugin.getInstance;
 
 @SuppressWarnings({"rawtypes", "SameParameterValue"})
 public class CompatibilityHelper {
@@ -43,9 +40,9 @@ public class CompatibilityHelper {
         return Class.forName("net.minecraft.server." + nmsName + "." + name);
     }
 
-    public static void setup(Logger logger) {
+    public static void setup(RedPacketPlugin plugin) {
         try {
-            nmsName = getServer().getClass().getPackage().getName().split("\\.")[3];
+            nmsName = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
             version = Integer.parseInt(nmsName.split("_")[1]);
         } catch (Throwable t) {
             // 因为 Paper 在高版本取消了 relocation
@@ -54,7 +51,7 @@ public class CompatibilityHelper {
         }
 
         if (version <= 7) {
-            RedPacketPlugin.log(Level.SEVERE, "插件只支持1.8+版本！");
+            plugin.log(Level.SEVERE, "插件只支持1.8+版本！");
             throw new IllegalStateException("插件只支持1.8+版本！");
         }
         if (version >= 12) {
@@ -76,7 +73,7 @@ public class CompatibilityHelper {
             EnumTitleActions = (Enum<? extends Enum>[]) enumTitleAction.getEnumConstants();
             CPacketPlayOutTitle = packetPlayOutTitle.getConstructor(enumTitleAction, IChatBaseComponent);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "初始化 NMS 实现时出现异常 (" + nmsName + ": v" + version + ")", e);
+            plugin.log(Level.SEVERE, "初始化 NMS 实现时出现异常 (" + nmsName + ": v" + version + ")", e);
         }
     }
 
@@ -129,12 +126,13 @@ public class CompatibilityHelper {
             player.sendTitle(title, subtitle, -1, -1, -1);
         } else {
             if (version >= 8) {
-                //反射需要较长时间，采取异步处理再发送消息
-                getInstance().getScheduler().runTaskAsync(() -> {
+                // 反射需要较长时间，采取异步处理再发送消息
+                RedPacketPlugin plugin = RedPacketPlugin.getInstance();
+                plugin.getScheduler().runTaskAsync(() -> {
                     Object connectionInstance = getDeclaredFieldAndGetIt(entityPlayer, "playerConnection", invoke(getHandle, player));
                     Object titlePacket = newInstance(CPacketPlayOutTitle, EnumTitleActions[0], invoke(toComponent, null, ComponentSerializer.toString(new TextComponent(title))));
                     Object subtitlePacket = newInstance(CPacketPlayOutTitle, EnumTitleActions[1], invoke(toComponent, null, ComponentSerializer.toString(new TextComponent(subtitle))));
-                    getInstance().getScheduler().runTask(() -> {
+                    plugin.getScheduler().runTask(() -> {
                         invoke(sendPacket, connectionInstance, titlePacket);
                         invoke(sendPacket, connectionInstance, subtitlePacket);
                     });
@@ -148,12 +146,13 @@ public class CompatibilityHelper {
             player.spigot().sendMessage(components);
         } else {
             if (version >= 7) {
-                //https://www.spigotmc.org/threads/get-player-ping-with-reflection.147773/
-                //反射需要较长时间，采取异步处理再发送消息
-                getInstance().getScheduler().runTaskAsync(() -> {
+                // https://www.spigotmc.org/threads/get-player-ping-with-reflection.147773/
+                // 反射需要较长时间，采取异步处理再发送消息
+                RedPacketPlugin plugin = RedPacketPlugin.getInstance();
+                plugin.getScheduler().runTaskAsync(() -> {
                     Object playerInstance = invoke(getHandle, player);
                     Object JSONString = invoke(toComponent, null, ComponentSerializer.toString(components));
-                    getInstance().getScheduler().runTask(() -> invoke(sendMessage, playerInstance, JSONString));
+                    plugin.getScheduler().runTask(() -> invoke(sendMessage, playerInstance, JSONString));
                 });
             }
         }
