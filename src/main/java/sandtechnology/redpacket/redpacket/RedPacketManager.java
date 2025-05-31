@@ -1,7 +1,6 @@
-package sandtechnology.redpacket.util;
+package sandtechnology.redpacket.redpacket;
 
 import sandtechnology.redpacket.RedPacketPlugin;
-import sandtechnology.redpacket.redpacket.RedPacket;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

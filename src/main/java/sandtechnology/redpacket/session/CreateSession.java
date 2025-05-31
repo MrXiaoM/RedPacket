@@ -6,7 +6,6 @@ import sandtechnology.redpacket.RedPacketPlugin;
 import sandtechnology.redpacket.redpacket.RedPacket;
 import sandtechnology.redpacket.util.EcoAndPermissionHelper;
 import sandtechnology.redpacket.util.OperatorHelper;
-import sandtechnology.redpacket.util.RedPacketManager;
 
 import java.util.UUID;
 

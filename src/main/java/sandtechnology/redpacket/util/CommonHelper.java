@@ -1,7 +1,5 @@
 package sandtechnology.redpacket.util;
 
-import org.bukkit.Bukkit;
-
 /**
  * 一般工具类
  */
@@ -28,17 +26,6 @@ public class CommonHelper {
             doIfFalse.func();
         }
         return check;
-    }
-
-    /**
-     * 为版本兼容而使用的转发命令方法
-     *
-     * @param start 指令名称
-     * @param args  参数
-     * @return 命令是否成功执行
-     */
-    public static boolean executeCommand(String start, String... args) {
-        return Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), start + " " + String.join(" ", args));
     }
 
     /**

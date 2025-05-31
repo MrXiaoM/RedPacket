@@ -11,6 +11,7 @@ import sandtechnology.redpacket.database.SqliteManager;
 import sandtechnology.redpacket.listener.ChatListener;
 import sandtechnology.redpacket.listener.GuiListener;
 import sandtechnology.redpacket.listener.MessageSender;
+import sandtechnology.redpacket.redpacket.RedPacketManager;
 import sandtechnology.redpacket.session.SessionManager;
 import sandtechnology.redpacket.util.*;
 
